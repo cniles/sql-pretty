@@ -32,15 +32,25 @@
 
 ;;; Code:
 
+(defun sql-pretty (begin end)
+  "Format text in buffer from BEGIN to END."
+  (let ((temp-file (make-temp-file "sql-pretty")))
+    (write-region begin end temp-file)
+    (delete-region (region-beginning) (region-end))
+    (call-process "python" temp-file t t
+		  "-c" "import sqlparse; import fileinput; print(sqlparse.format(' '.join([line for line in fileinput.input()]), reindent=True, keyword_case='upper'))")))
+
 ;;;###autoload
 (defun sql-pretty-print-buffer ()
   "SQL Prettify the current buffer."
   (interactive)
-  (let ((temp-file (make-temp-file "sql-pretty")))
-    (write-region (point-min) (point-max) temp-file)
-    (erase-buffer)
-    (call-process "python" temp-file t t
-		  "-c" "import sqlparse; import fileinput; print(sqlparse.format(' '.join([line for line in fileinput.input()]), reindent=True, keyword_case='upper'))" temp-file)))
+  (sql-pretty (point-min) (point-max)))
+
+;;;###autoload
+(defun sql-pretty-print-region ()
+  "SQL Prettify the selected region."
+  (interactive)
+  (sql-pretty (region-beginning) (region-end)))
 
 (provide 'sql-pretty)
 ;;; sql-pretty.el ends here
